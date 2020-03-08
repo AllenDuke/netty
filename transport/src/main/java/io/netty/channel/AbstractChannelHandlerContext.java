@@ -361,10 +361,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
         EventExecutor executor = next.executor();
-        if (executor.inEventLoop()) {
+        if (executor.inEventLoop()) {//如果当前线程是netty io线程就直接读
             next.invokeChannelRead(m);
         } else {
-            executor.execute(new Runnable() {
+            executor.execute(new Runnable() {//否则封装成任务，加到任务队列里
                 @Override
                 public void run() {
                     next.invokeChannelRead(m);
@@ -374,7 +374,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void invokeChannelRead(Object msg) {
-        if (invokeHandler()) {
+        if (invokeHandler()) {//如果当前handlerContext中的handler可以调用
             try {
                 ((ChannelInboundHandler) handler()).channelRead(this, msg);
             } catch (Throwable t) {

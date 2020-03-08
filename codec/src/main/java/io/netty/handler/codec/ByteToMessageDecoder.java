@@ -267,13 +267,13 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof ByteBuf) {
-            CodecOutputList out = CodecOutputList.newInstance();
+        if (msg instanceof ByteBuf) {//如果传进来的msg是一个ByteBuf，那么对它进行解码
+            CodecOutputList out = CodecOutputList.newInstance();//用一个list去装载解析出来的对象
             try {
                 first = cumulation == null;
                 cumulation = cumulator.cumulate(ctx.alloc(),
                         first ? Unpooled.EMPTY_BUFFER : cumulation, (ByteBuf) msg);
-                callDecode(ctx, cumulation, out);
+                callDecode(ctx, cumulation, out);//对msg进行解码
             } catch (DecoderException e) {
                 throw e;
             } catch (Exception e) {
@@ -293,9 +293,9 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 int size = out.size();
                 firedChannelRead |= out.insertSinceRecycled();
                 fireChannelRead(ctx, out, size);
-                out.recycle();
+                out.recycle();//清空数组
             }
-        } else {
+        } else {//否则往后传播
             ctx.fireChannelRead(msg);
         }
     }
@@ -318,7 +318,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      */
     static void fireChannelRead(ChannelHandlerContext ctx, CodecOutputList msgs, int numElements) {
         for (int i = 0; i < numElements; i ++) {
-            ctx.fireChannelRead(msgs.getUnsafe(i));
+            ctx.fireChannelRead(msgs.getUnsafe(i));//把outputList里的数据一个个地往后传播
         }
     }
 
@@ -415,10 +415,10 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      */
     protected void callDecode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         try {
-            while (in.isReadable()) {
+            while (in.isReadable()) {//对ByteBuf循环读出来进行解析
                 int outSize = out.size();
 
-                if (outSize > 0) {
+                if (outSize > 0) {//如果outList里有数据就直接先往后传播
                     fireChannelRead(ctx, out, outSize);
                     out.clear();
 
@@ -434,6 +434,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 }
 
                 int oldInputLength = in.readableBytes();
+                //如果这是一个定长解码器，那么方法里一次会解码如8字节，剩下的会在不断的循环得到解决
                 decodeRemovalReentryProtection(ctx, in, out);
 
                 // Check if this handler was removed before continuing the loop.
@@ -495,11 +496,11 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             throws Exception {
         decodeState = STATE_CALLING_CHILD_DECODE;
         try {
-            decode(ctx, in, out);
+            decode(ctx, in, out);//解码，解析到的会把对象放到out里
         } finally {
             boolean removePending = decodeState == STATE_HANDLER_REMOVED_PENDING;
             decodeState = STATE_INIT;
-            if (removePending) {
+            if (removePending) {//如果当前handlerContext要被remove
                 fireChannelRead(ctx, out, out.size());
                 out.clear();
                 handlerRemoved(ctx);

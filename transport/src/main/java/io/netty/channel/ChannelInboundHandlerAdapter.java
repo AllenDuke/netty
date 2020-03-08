@@ -90,7 +90,7 @@ public class ChannelInboundHandlerAdapter extends ChannelHandlerAdapter implemen
     @Skip
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ctx.fireChannelRead(msg);
+        ctx.fireChannelRead(msg);//handlerAdapter默认往后传播
     }
 
     /**
